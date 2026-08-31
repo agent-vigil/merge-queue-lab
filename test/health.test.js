@@ -8,7 +8,7 @@ test("the lab baseline is healthy", () => {
 });
 
 test("the passing queue fixture has an explicit proof marker", () => {
-  assert.equal(queueProof(), "governed");
+  assert.equal(queueProof(), "strict");
 });
 
 test("proof freshness expires after seven days", () => {
