@@ -1,0 +1,51 @@
+name: Agent Vigil
+
+on:
+  # The base branch selects these workflow bytes. Candidate code is checked out
+  # only after the job has entered the credential-free isolation contract.
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  evidence:
+    name: Agent Vigil evidence
+    if: github.event.pull_request.state == 'open'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.23.2
+          package-manager-cache: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          allow-unsafe-pr-checkout: true
+      - id: vigil
+        uses: sulmusic2-star/agent-vigil@fdf277cb0f2bde1dab82df4d8894bef1a75145b7 # reviewed Agent Vigil runtime
+        with:
+          mode: maintainer
+          policy: .agent-vigil.json
+          policy-ref: ${{ github.event.pull_request.base.sha }}
+          repo: .
+          base: ${{ github.event.pull_request.base.sha }}
+          head: ${{ github.event.pull_request.head.sha }}
+          isolate-candidate: true
+          candidate-setup-cmd: npm ci --ignore-scripts
+      - name: Retain auditable Agent Vigil receipt
+        if: always() && steps.vigil.outputs.report != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agent-vigil-receipt
+          path: |
+            ${{ steps.vigil.outputs.report }}
+            ${{ steps.vigil.outputs.sarif }}
+            ${{ steps.vigil.outputs.value-card }}
+            ${{ steps.vigil.outputs.github-evidence }}
+          if-no-files-found: error
+          retention-days: 30

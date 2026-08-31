@@ -1,0 +1,56 @@
+name: Agent Vigil outcomes
+
+on:
+  workflow_run:
+    workflows: [Agent Vigil]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  outcome:
+    if: github.event.workflow_run.event == 'pull_request_target'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Select the exact trusted host Node.js runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22.23.2
+          package-manager-cache: false
+      - id: source
+        name: Locate the completed evidence run
+        env:
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          run_id="$EVENT_RUN_ID"
+          if [[ ! "$run_id" =~ ^[0-9]+$ ]]; then
+            echo "The completed Agent Vigil evidence run ID is invalid." >&2
+            exit 2
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+      - name: Download the immutable receipt artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: agent-vigil-receipt
+          path: .agent-vigil-prior
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.source.outputs.run_id }}
+      - id: outcome
+        uses: sulmusic2-star/agent-vigil@fdf277cb0f2bde1dab82df4d8894bef1a75145b7 # reviewed Agent Vigil runtime
+        with:
+          mode: outcome
+          outcome-receipt: .agent-vigil-prior/agent-vigil-report.json
+          actions-run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Retain the post-run Value Card
+        if: always() && steps.outcome.outputs.value-card != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agent-vigil-outcome-${{ steps.source.outputs.run_id }}
+          path: |
+            ${{ steps.outcome.outputs.value-card }}
+            ${{ steps.outcome.outputs.github-evidence }}
+          retention-days: 30

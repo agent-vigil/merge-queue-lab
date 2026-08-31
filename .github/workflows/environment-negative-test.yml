@@ -1,0 +1,17 @@
+name: Environment boundary negative test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  must-not-start-off-main:
+    runs-on: ubuntu-24.04
+    environment: agent-vigil-gate
+    steps:
+      - name: Fail if an untrusted branch enters the environment
+        run: |
+          echo "A non-main branch reached the protected environment." >&2
+          exit 1

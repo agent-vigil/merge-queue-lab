@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "integrityMode": "calibrated",
+  "testCommand": "node --test",
+  "strict": true,
+  "minVerified": 1,
+  "maintainer": {
+    "reviewMode": "automated",
+    "requireHumanAttestation": false,
+    "requireLinkedIssue": true,
+    "requireAiDisclosure": true,
+    "maxChangedFiles": 20,
+    "maxChangedLines": 800,
+    "requireTestChange": true,
+    "protectedPaths": [
+      ".github/workflows/**",
+      ".agent-vigil.json",
+      ".agent-vigil-runner.json",
+      "package.json",
+      "package-lock.json",
+      "npm-shrinkwrap.json",
+      ".npmrc",
+      "tsconfig*.json",
+      "jest.config.*",
+      "vitest.config.*",
+      "vite.config.*",
+      "playwright.config.*",
+      "cypress.config.*",
+      "ava.config.*",
+      "babel.config.*",
+      ".mocharc*"
+    ],
+    "testPathPatterns": [
+      "test/**",
+      "tests/**",
+      "__tests__/**",
+      "**/*.test.*",
+      "**/*.spec.*"
+    ],
+    "differentialTest": {
+      "command": "node --test",
+      "setupCommand": "npm ci --ignore-scripts",
+      "timeoutSeconds": 300,
+      "overlayChangedTests": true
+    },
+    "automatedReview": {
+      "setupCommand": "npm ci --ignore-scripts",
+      "commands": [
+        "node --test"
+      ],
+      "timeoutSeconds": 300
+    }
+  }
+}
+
