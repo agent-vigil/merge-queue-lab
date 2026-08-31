@@ -3,7 +3,7 @@ export function health() {
 }
 
 export function queueProof() {
-  return "governed";
+  return "strict";
 }
 
 export function proofFreshness(ageDays) {
