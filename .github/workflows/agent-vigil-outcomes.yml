@@ -21,10 +21,11 @@ jobs:
           node-version: 22.23.2
           package-manager-cache: false
       - id: source
-        name: Locate the completed evidence run
+        name: Bind the completed evidence run ID
         env:
           EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
+          set -euo pipefail
           run_id="$EVENT_RUN_ID"
           if [[ ! "$run_id" =~ ^[0-9]+$ ]]; then
             echo "The completed Agent Vigil evidence run ID is invalid." >&2
@@ -32,25 +33,28 @@ jobs:
           fi
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
       - name: Download the immutable receipt artifact
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: agent-vigil-receipt
           path: .agent-vigil-prior
           github-token: ${{ github.token }}
           run-id: ${{ steps.source.outputs.run_id }}
       - id: outcome
-        uses: sulmusic2-star/agent-vigil@fdf277cb0f2bde1dab82df4d8894bef1a75145b7 # reviewed Agent Vigil runtime
+        name: Observe the post-run outcome without signing
+        # This exact runtime must match the reviewed evidence runtime above.
+        uses: sulmusic2-star/agent-vigil@6b6ee63bfc5c86c834948404af00bfe7f56826bd
         with:
           mode: outcome
           outcome-receipt: .agent-vigil-prior/agent-vigil-report.json
           actions-run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ github.token }}
-      - name: Retain the post-run Value Card
+      - name: Retain only the Action-declared outcome outputs
         if: always() && steps.outcome.outputs.value-card != ''
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: agent-vigil-outcome-${{ steps.source.outputs.run_id }}
           path: |
             ${{ steps.outcome.outputs.value-card }}
             ${{ steps.outcome.outputs.github-evidence }}
+          if-no-files-found: error
           retention-days: 30
